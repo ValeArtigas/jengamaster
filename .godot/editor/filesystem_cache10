@@ -1,0 +1,10 @@
+78098b89c88a74ebe8c20117b8754620
+::res://::1791688545
+icon.svg::CompressedTexture2D::7640517840666867711::1791688244::1791688547::1::::<><><>0<>0<>ef3a6081acdc84543e2ce8c7efbd1c32<>res://.godot/imported/icon.svg-218a8f2b3041327d8a5756f3a245f83b.ctex::
+::res://scenes/::1791688246
+main.tscn::PackedScene::-1::1791688246::0::1::::<><><>0<>0<><>::res://scripts/main.gd
+::res://scripts/::1791688492
+game.gd::GDScript::6760859061725677504::1791688535::0::1::::Game<>Control<><>0<>0<><>::
+main.gd::GDScript::7937356410050717570::1791688286::0::1::::<>Node<><>0<>0<><>::
+menu.gd::GDScript::3059265420798781412::1791688356::0::1::::Menu<>Control<><>0<>0<><>::
+questions.gd::GDScript::2844129483133279828::1791688280::0::1::::Questions<>RefCounted<><>0<>0<><>::
