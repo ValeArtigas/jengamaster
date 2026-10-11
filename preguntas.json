@@ -1,0 +1,162 @@
+[
+  {
+    "id": 1,
+    "pregunta": "¿Cuánto es 5! ?",
+    "opciones": ["24", "60", "120", "720"],
+    "respuesta_correcta": 2,
+    "categoria": "Unidad_III",
+    "recompensa_tipo": "estrella"
+  },
+  {
+    "id": 2,
+    "pregunta": "¿Cuánto es 0! ?",
+    "opciones": ["0", "1", "No existe", "10"],
+    "respuesta_correcta": 1,
+    "categoria": "Unidad_III",
+    "recompensa_tipo": "estrella"
+  },
+  {
+    "id": 3,
+    "pregunta": "El número de permutaciones de 4 elementos distintos es:",
+    "opciones": ["8", "12", "24", "48"],
+    "respuesta_correcta": 2,
+    "categoria": "Unidad_III",
+    "recompensa_tipo": "estrella"
+  },
+  {
+    "id": 4,
+    "pregunta": "¿Cuántas formas hay de ordenar 3 libros distintos en un estante?",
+    "opciones": ["3", "6", "9", "12"],
+    "respuesta_correcta": 1,
+    "categoria": "Unidad_III",
+    "recompensa_tipo": "estrella"
+  },
+  {
+    "id": 5,
+    "pregunta": "P(6, 2) (permutaciones de 6 tomados de 2 en 2) es:",
+    "opciones": ["12", "30", "36", "15"],
+    "respuesta_correcta": 1,
+    "categoria": "Unidad_III",
+    "recompensa_tipo": "estrella"
+  },
+  {
+    "id": 6,
+    "pregunta": "La fórmula de P(n, r) es:",
+    "opciones": ["n! / (n-r)!", "n! · r!", "n! / (r-1)!", "(n-r)! / n!"],
+    "respuesta_correcta": 0,
+    "categoria": "Unidad_III",
+    "recompensa_tipo": "estrella"
+  },
+  {
+    "id": 7,
+    "pregunta": "¿Cuántos anagramas tiene la palabra SALA?",
+    "opciones": ["24", "12", "6", "32"],
+    "respuesta_correcta": 1,
+    "categoria": "Unidad_III",
+    "recompensa_tipo": "estrella"
+  },
+  {
+    "id": 8,
+    "pregunta": "Las permutaciones circulares de 5 personas alrededor de una mesa son:",
+    "opciones": ["120", "24", "60", "20"],
+    "respuesta_correcta": 1,
+    "categoria": "Unidad_III",
+    "recompensa_tipo": "estrella"
+  },
+  {
+    "id": 9,
+    "pregunta": "Las permutaciones de las letras de LIBRO son:",
+    "opciones": ["120", "24", "720", "60"],
+    "respuesta_correcta": 0,
+    "categoria": "Unidad_III",
+    "recompensa_tipo": "estrella"
+  },
+  {
+    "id": 10,
+    "pregunta": "Las permutaciones de las letras de CORAZÓN (la O se repite) son:",
+    "opciones": ["2520", "5040", "1260", "720"],
+    "respuesta_correcta": 0,
+    "categoria": "Unidad_III",
+    "recompensa_tipo": "estrella"
+  },
+  {
+    "id": 11,
+    "pregunta": "El producto 10 · 9 · 8 · 7 es igual a:",
+    "opciones": ["P(10, 4)", "P(10, 6)", "P(4, 10)", "10!"],
+    "respuesta_correcta": 0,
+    "categoria": "Unidad_III",
+    "recompensa_tipo": "estrella"
+  },
+  {
+    "id": 12,
+    "pregunta": "¿Cuánto es 7! / 5! ?",
+    "opciones": ["42", "21", "56", "72"],
+    "respuesta_correcta": 0,
+    "categoria": "Unidad_III",
+    "recompensa_tipo": "estrella"
+  },
+  {
+    "id": 13,
+    "pregunta": "¿Cuál es el planeta más grande del sistema solar?",
+    "opciones": ["Tierra", "Júpiter", "Marte", "Saturno"],
+    "respuesta_correcta": 1,
+    "categoria": "Cultura_General",
+    "recompensa_tipo": "moneda"
+  },
+  {
+    "id": 14,
+    "pregunta": "Capital de Francia:",
+    "opciones": ["Madrid", "París", "Roma", "Berlín"],
+    "respuesta_correcta": 1,
+    "categoria": "Cultura_General",
+    "recompensa_tipo": "moneda"
+  },
+  {
+    "id": 15,
+    "pregunta": "Autor de Cien años de soledad:",
+    "opciones": ["Mario Vargas Llosa", "Pablo Neruda", "Gabriel García Márquez", "Julio Cortázar"],
+    "respuesta_correcta": 2,
+    "categoria": "Cultura_General",
+    "recompensa_tipo": "moneda"
+  },
+  {
+    "id": 16,
+    "pregunta": "El océano más grande del mundo es:",
+    "opciones": ["Atlántico", "Índico", "Ártico", "Pacífico"],
+    "respuesta_correcta": 3,
+    "categoria": "Cultura_General",
+    "recompensa_tipo": "moneda"
+  },
+  {
+    "id": 17,
+    "pregunta": "Símbolo químico del oro:",
+    "opciones": ["Or", "Au", "Ag", "Od"],
+    "respuesta_correcta": 1,
+    "categoria": "Cultura_General",
+    "recompensa_tipo": "moneda"
+  },
+  {
+    "id": 18,
+    "pregunta": "¿Quién pintó la Mona Lisa?",
+    "opciones": ["Miguel Ángel", "Leonardo da Vinci", "Rafael", "Picasso"],
+    "respuesta_correcta": 1,
+    "categoria": "Cultura_General",
+    "recompensa_tipo": "moneda"
+  },
+  {
+    "id": 19,
+    "pregunta": "¿Cuántos huesos tiene el cuerpo humano adulto?",
+    "opciones": ["186", "206", "216", "196"],
+    "respuesta_correcta": 1,
+    "categoria": "Cultura_General",
+    "recompensa_tipo": "moneda"
+  },
+  {
+    "id": 20,
+    "pregunta": "Instrumento musical de 88 teclas:",
+    "opciones": ["Violín", "Guitarra", "Piano", "Flauta"],
+    "respuesta_correcta": 2,
+    "categoria": "Cultura_General",
+    "recompensa_tipo": "moneda"
+  }
+]
