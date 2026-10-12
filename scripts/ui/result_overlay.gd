@@ -14,7 +14,7 @@ func _ready() -> void:
 
 func _build() -> void:
 	var dim := ColorRect.new()
-	dim.color = Color(0, 0, 0, 0.75)
+	dim.color = Color(0, 0, 0, 0.80)
 	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(dim)
 
@@ -23,17 +23,11 @@ func _build() -> void:
 	_panel.anchor_right = 0.5
 	_panel.anchor_top = 0.5
 	_panel.anchor_bottom = 0.5
-	_panel.offset_left = -430
-	_panel.offset_right = 430
-	_panel.offset_top = -560
-	_panel.offset_bottom = 560
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color("#1c1c32")
-	style.border_color = Color("#1de9b6")
-	style.set_border_width_all(4)
-	style.set_corner_radius_all(28)
-	style.set_content_margin_all(30)
-	_panel.add_theme_stylebox_override("panel", style)
+	_panel.offset_left = -450
+	_panel.offset_right = 450
+	_panel.offset_top = -580
+	_panel.offset_bottom = 580
+	_panel.add_theme_stylebox_override("panel", PopArt.panel_style(PopArt.CREAM))
 	add_child(_panel)
 
 	_vbox = VBoxContainer.new()
@@ -43,12 +37,13 @@ func _build() -> void:
 	_title = Label.new()
 	_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_title.add_theme_font_size_override("font_size", 52)
-	_title.add_theme_color_override("font_color", Color("#1de9b6"))
+	_title.custom_minimum_size = Vector2(0, 170)
+	_title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	PopArt.style_header(_title, 58, PopArt.PINK)
 	_vbox.add_child(_title)
 
 	_info_box = VBoxContainer.new()
-	_info_box.add_theme_constant_override("separation", 12)
+	_info_box.add_theme_constant_override("separation", 14)
 	_vbox.add_child(_info_box)
 
 	_actions_box = HBoxContainer.new()
@@ -66,18 +61,20 @@ func open(title: String, lines: Array, actions: Array) -> void:
 		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		l.add_theme_font_size_override("font_size", 30)
-		l.add_theme_color_override("font_color", Color("#e8eaf6"))
+		l.add_theme_color_override("font_color", PopArt.INK)
 		_info_box.add_child(l)
 	for c in _actions_box.get_children():
 		c.queue_free()
 	for action in actions:
 		var b := Button.new()
 		b.text = str(action.get("text", "OK"))
-		b.custom_minimum_size = Vector2(280, 96)
+		b.custom_minimum_size = Vector2(280, 104)
 		b.add_theme_font_size_override("font_size", 30)
 		b.add_theme_color_override("font_color", Color.WHITE)
-		var color: Color = action.get("color", Color("#1de9b6"))
-		_style_button(b, color)
+		b.add_theme_color_override("font_outline_color", PopArt.INK)
+		b.add_theme_constant_override("outline_size", 7)
+		var color: Color = action.get("color", PopArt.GREEN)
+		PopArt.style_button(b, color)
 		b.pressed.connect(_do_action.bind(action.get("cb", Callable())))
 		_actions_box.add_child(b)
 	visible = true
@@ -92,16 +89,3 @@ func _do_action(cb: Callable) -> void:
 	visible = false
 	if cb.is_valid():
 		cb.call()
-
-func _style_button(btn: Button, color: Color) -> void:
-	var normal := StyleBoxFlat.new()
-	normal.bg_color = color
-	normal.set_corner_radius_all(18)
-	var hover := normal.duplicate()
-	hover.bg_color = color.lightened(0.15)
-	var pressed := normal.duplicate()
-	pressed.bg_color = color.darkened(0.2)
-	btn.add_theme_stylebox_override("normal", normal)
-	btn.add_theme_stylebox_override("hover", hover)
-	btn.add_theme_stylebox_override("pressed", pressed)
-	btn.add_theme_stylebox_override("focus", normal.duplicate())

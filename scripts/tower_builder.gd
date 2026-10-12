@@ -37,8 +37,73 @@ func build(p_floors: int, p_theme: int) -> void:
 func remove_block(block: JengaBlock) -> void:
 	blocks.erase(block)
 
+func add_block(block: JengaBlock) -> void:
+	if not blocks.has(block):
+		blocks.append(block)
+
 func remaining() -> int:
 	return blocks.size()
+
+# --- Regla de la cima ---------------------------------------------------
+
+# Piso mas alto ocupado por la torre (indice logico).
+func highest_floor() -> int:
+	var top := -1
+	for b in blocks:
+		if is_instance_valid(b) and not b.extracted:
+			top = maxi(top, b.floor_index)
+	return top
+
+# Limite superior de extraccion: dos pisos por debajo de la cima.
+func extract_limit() -> int:
+	return highest_floor() - 2
+
+func is_extractable(block: JengaBlock) -> bool:
+	if block == null or not is_instance_valid(block):
+		return false
+	return block.floor_index <= extract_limit()
+
+func has_eligible_block() -> bool:
+	var limit := extract_limit()
+	for b in blocks:
+		if is_instance_valid(b) and b.floor_index <= limit:
+			return true
+	return false
+
+func _floor_block_count(floor_i: int) -> int:
+	var n := 0
+	for b in blocks:
+		if is_instance_valid(b) and not b.extracted and b.floor_index == floor_i:
+			n += 1
+	return n
+
+# Siguiente hueco ordenado en la cima: 3 bloques por piso con orientacion
+# alternada. Devuelve {} si ya se alcanzo el maximo de pisos.
+func next_top_transform() -> Dictionary:
+	var top := highest_floor()
+	var floor_i := top
+	var count := 0
+	if top < 0:
+		floor_i = 0
+	else:
+		count = _floor_block_count(top)
+		if count >= BLOCKS_PER_FLOOR:
+			floor_i = top + 1
+			count = 0
+	if floor_i >= GameState.MAX_TOWER_FLOORS:
+		return {}
+	var along_x := floor_i % 2 == 0
+	var offset := float(count - 1)
+	var y := 0.26 + float(floor_i) * (BLOCK_SIZE.y + 0.006)
+	var pos := Vector3(0.0, y, offset) if along_x else Vector3(offset, y, 0.0)
+	return {
+		"position": pos,
+		"floor_index": floor_i,
+		"rot_y": 0.0 if along_x else deg_to_rad(90.0)
+	}
+
+func can_place() -> bool:
+	return not next_top_transform().is_empty()
 
 func tower_height() -> float:
 	return float(floors) * BLOCK_SIZE.y

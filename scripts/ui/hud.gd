@@ -4,8 +4,11 @@ extends Control
 signal menu_pressed
 
 var _level_label: Label
+var _tower_label: Label
 var _players_box: VBoxContainer
 var _hint_label: Label
+var _hint_timer: SceneTreeTimer = null
+const HINT_DEFAULT := "Saca un bloque de los pisos bajos y llévalo a la cima · Arrastra el fondo para girar · Pellizca para zoom"
 var _panels: Array = []
 var _name_labels: Array = []
 var _stat_labels: Array = []
@@ -57,6 +60,12 @@ func _build() -> void:
 	menu_btn.pressed.connect(func() -> void: menu_pressed.emit())
 	top.add_child(menu_btn)
 
+	_tower_label = Label.new()
+	_tower_label.add_theme_font_size_override("font_size", 30)
+	_tower_label.add_theme_color_override("font_color", Color("#ffd54f"))
+	_tower_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	vb.add_child(_tower_label)
+
 	_players_box = VBoxContainer.new()
 	_players_box.add_theme_constant_override("separation", 12)
 	_players_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -68,7 +77,7 @@ func _build() -> void:
 	vb.add_child(grow)
 
 	_hint_label = Label.new()
-	_hint_label.text = "Desliza un bloque 3D para extraerlo · Arrastra el fondo para girar · Pellizca para zoom"
+	_hint_label.text = HINT_DEFAULT
 	_hint_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_hint_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_hint_label.add_theme_font_size_override("font_size", 24)
@@ -127,9 +136,29 @@ func set_turn(index: int) -> void:
 
 func update_all() -> void:
 	_level_label.text = "NIVEL %d" % GameState.level
+	if _tower_label != null:
+		_tower_label.text = "TORRE %d/%d pisos   ·   Bloques apilados: %d" % [
+			GameState.tower_height, GameState.goal_height, GameState.stacked_blocks
+		]
 	for i in _stat_labels.size():
 		var p: GameState.PlayerData = GameState.players[i]
-		_stat_labels[i].text = "VIDAS %s   ★ %d   ● %d" % [_hearts(p.lives), p.stars, p.coins]
+		_stat_labels[i].text = "VIDAS %s   ★ %d   ● %d   ⬛ %d" % [_hearts(p.lives), p.stars, p.coins, p.blocks]
+
+func flash_hint(text: String) -> void:
+	if _hint_label == null:
+		return
+	_hint_label.text = text
+	_hint_label.add_theme_color_override("font_color", Color("#ff8a80"))
+	if _hint_timer != null and _hint_timer.timeout.is_connected(_reset_hint):
+		_hint_timer.timeout.disconnect(_reset_hint)
+	_hint_timer = get_tree().create_timer(1.6)
+	_hint_timer.timeout.connect(_reset_hint)
+
+func _reset_hint() -> void:
+	if _hint_label == null:
+		return
+	_hint_label.text = HINT_DEFAULT
+	_hint_label.add_theme_color_override("font_color", Color(1, 1, 1, 0.85))
 
 func _hearts(lives: int) -> String:
 	return "♥".repeat(maxi(lives, 0)) + "♡".repeat(maxi(GameState.START_LIVES - lives, 0))

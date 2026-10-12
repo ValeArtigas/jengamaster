@@ -21,37 +21,37 @@ func _ready() -> void:
 
 func _build() -> void:
 	var dim := ColorRect.new()
-	dim.color = Color(0, 0, 0, 0.72)
+	dim.color = Color(0, 0, 0, 0.80)
 	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(dim)
 
 	_panel = PanelContainer.new()
-	_panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
 	_panel.anchor_left = 0.5
 	_panel.anchor_right = 0.5
 	_panel.anchor_top = 0.5
 	_panel.anchor_bottom = 0.5
-	_panel.offset_left = -460
-	_panel.offset_right = 460
-	_panel.offset_top = -620
-	_panel.offset_bottom = 620
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color("#1c1c32")
-	style.border_color = Color("#ffd54f")
-	style.set_border_width_all(4)
-	style.set_corner_radius_all(28)
-	style.set_content_margin_all(30)
-	_panel.add_theme_stylebox_override("panel", style)
+	_panel.offset_left = -480
+	_panel.offset_right = 480
+	_panel.offset_top = -660
+	_panel.offset_bottom = 660
+	_panel.add_theme_stylebox_override("panel", PopArt.panel_style(PopArt.CREAM))
 	add_child(_panel)
 
 	var vb := VBoxContainer.new()
 	vb.add_theme_constant_override("separation", 18)
 	_panel.add_child(vb)
 
+	var header := Label.new()
+	header.text = "¿SABES LA RESPUESTA?"
+	header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	header.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	PopArt.style_header(header, 40, PopArt.PINK)
+	vb.add_child(header)
+
 	_category_label = Label.new()
 	_category_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_category_label.add_theme_font_size_override("font_size", 26)
-	_category_label.add_theme_color_override("font_color", Color("#ffd54f"))
+	_category_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	PopArt.style_header(_category_label, 26, PopArt.PURPLE)
 	vb.add_child(_category_label)
 
 	_question_label = Label.new()
@@ -60,11 +60,11 @@ func _build() -> void:
 	_question_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_question_label.custom_minimum_size = Vector2(0, 220)
 	_question_label.add_theme_font_size_override("font_size", 34)
-	_question_label.add_theme_color_override("font_color", Color.WHITE)
+	_question_label.add_theme_color_override("font_color", PopArt.INK)
 	vb.add_child(_question_label)
 
 	_options_box = VBoxContainer.new()
-	_options_box.add_theme_constant_override("separation", 14)
+	_options_box.add_theme_constant_override("separation", 16)
 	vb.add_child(_options_box)
 
 	_buttons.clear()
@@ -75,11 +75,12 @@ func _build() -> void:
 
 	_feedback_label = Label.new()
 	_feedback_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_feedback_label.add_theme_font_size_override("font_size", 30)
+	_feedback_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	PopArt.style_header(_feedback_label, 32, PopArt.GREEN)
 	_feedback_label.visible = false
 	vb.add_child(_feedback_label)
 
-	_continue_btn = _make_button("CONTINUAR", Color("#1de9b6"), 28)
+	_continue_btn = _make_button("CONTINUAR", PopArt.GREEN, 30)
 	_continue_btn.visible = false
 	_continue_btn.pressed.connect(_on_continue)
 	vb.add_child(_continue_btn)
@@ -92,6 +93,7 @@ func open(question: Dictionary) -> void:
 	_continue_btn.visible = false
 	var cat := str(question.get("categoria", ""))
 	_category_label.text = _pretty_category(cat)
+	_category_label.add_theme_color_override("font_color", PopArt.PURPLE if cat == Trivia.CATEGORY_CULTURA else PopArt.PINK)
 	_question_label.text = str(question.get("pregunta", ""))
 	var opts: Array = question.get("opciones", [])
 	for i in _buttons.size():
@@ -117,14 +119,14 @@ func _on_option(index: int) -> void:
 	var correct_index := int(_question.get("respuesta_correcta", -1))
 	for b in _buttons:
 		(b as Button).disabled = true
-	_buttons[correct_index].modulate = Color(0.4, 1.4, 0.5)
+	_buttons[correct_index].modulate = Color(0.55, 1.5, 0.6)
 	if index != correct_index and index >= 0 and index < _buttons.size():
-		_buttons[index].modulate = Color(1.6, 0.4, 0.4)
+		_buttons[index].modulate = Color(1.7, 0.45, 0.45)
 
 	var is_correct := index == correct_index
 	_feedback_label.visible = true
-	_feedback_label.text = "¡CORRECTO! Ganaste una recompensa" if is_correct else "¡UPS! Respuesta incorrecta"
-	_feedback_label.add_theme_color_override("font_color", Color("#69f0ae") if is_correct else Color("#ff5252"))
+	_feedback_label.text = "¡CORRECTO! GANASTE UNA RECOMPENSA" if is_correct else "¡UPS! RESPUESTA INCORRECTA"
+	_feedback_label.add_theme_color_override("font_color", PopArt.GREEN if is_correct else PopArt.RED)
 	_continue_btn.visible = true
 
 func _on_continue() -> void:
@@ -137,9 +139,11 @@ func _on_continue() -> void:
 
 func _make_option_button(index: int) -> Button:
 	var b := Button.new()
-	b.custom_minimum_size = Vector2(0, 100)
+	b.custom_minimum_size = Vector2(0, 104)
 	b.add_theme_font_size_override("font_size", 28)
 	b.add_theme_color_override("font_color", Color.WHITE)
+	b.add_theme_color_override("font_outline_color", PopArt.INK)
+	b.add_theme_constant_override("outline_size", 6)
 	b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	b.pressed.connect(_on_option.bind(index))
 	return b
@@ -147,41 +151,26 @@ func _make_option_button(index: int) -> Button:
 func _style_options() -> void:
 	for i in _buttons.size():
 		var b: Button = _buttons[i]
-		b.add_theme_stylebox_override("normal", _opt_style(Color("#3d5afe")))
-		b.add_theme_stylebox_override("hover", _opt_style(Color("#3d5afe").lightened(0.2)))
-		b.add_theme_stylebox_override("pressed", _opt_style(Color("#3d5afe").darkened(0.2)))
-		b.add_theme_stylebox_override("disabled", _opt_style(Color("#3d5afe")))
-		b.add_theme_stylebox_override("focus", _opt_style(Color("#3d5afe")))
-
-func _opt_style(color: Color) -> StyleBoxFlat:
-	var s := StyleBoxFlat.new()
-	s.bg_color = color
-	s.set_corner_radius_all(16)
-	s.set_content_margin_all(16)
-	return s
+		b.add_theme_stylebox_override("normal", PopArt.sticker_style(PopArt.CYAN))
+		b.add_theme_stylebox_override("hover", PopArt.sticker_style(PopArt.CYAN.lightened(0.15)))
+		b.add_theme_stylebox_override("pressed", PopArt.sticker_style(PopArt.CYAN.darkened(0.15), 18, 7, 4))
+		b.add_theme_stylebox_override("disabled", PopArt.sticker_style(PopArt.CYAN))
+		b.add_theme_stylebox_override("focus", PopArt.sticker_style(PopArt.CYAN))
 
 func _make_button(text: String, color: Color, font_size: int) -> Button:
 	var b := Button.new()
 	b.text = text
-	b.custom_minimum_size = Vector2(0, 90)
+	b.custom_minimum_size = Vector2(0, 104)
 	b.add_theme_font_size_override("font_size", font_size)
 	b.add_theme_color_override("font_color", Color.WHITE)
-	var normal := StyleBoxFlat.new()
-	normal.bg_color = color
-	normal.set_corner_radius_all(16)
-	var hover := normal.duplicate()
-	hover.bg_color = color.lightened(0.15)
-	var pressed := normal.duplicate()
-	pressed.bg_color = color.darkened(0.2)
-	b.add_theme_stylebox_override("normal", normal)
-	b.add_theme_stylebox_override("hover", hover)
-	b.add_theme_stylebox_override("pressed", pressed)
-	b.add_theme_stylebox_override("focus", normal.duplicate())
+	b.add_theme_color_override("font_outline_color", PopArt.INK)
+	b.add_theme_constant_override("outline_size", 7)
+	PopArt.style_button(b, color)
 	return b
 
 func _pretty_category(cat: String) -> String:
 	if cat == Trivia.CATEGORY_UNIDAD:
-		return "UNIDAD III · Premio: ESTRELLA"
+		return "UNIDAD III · PREMIO: ESTRELLA"
 	if cat == Trivia.CATEGORY_CULTURA:
-		return "CULTURA GENERAL · Premio: MONEDA"
+		return "CULTURA GENERAL · PREMIO: MONEDA"
 	return cat

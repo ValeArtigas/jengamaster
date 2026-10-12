@@ -3,13 +3,13 @@ extends Node3D
 
 signal exit_requested
 
-enum State { BUILDING, TURN, DRAGGING, TRIVIA, GAME_OVER }
+enum State { BUILDING, TURN, DRAGGING, PLACING, TRIVIA, GAME_OVER }
 
 const BLOCK_LAYER := 2
 const DRAG_STIFFNESS := 9.0
 const MAX_DRAG_SPEED := 8.0
 const EXTRACT_RADIUS := 2.6
-const SETTLE_WAIT := 0.6
+const PLACE_TIME := 0.45
 
 var camera: CameraOrbit
 var env_builder: EnvironmentBuilder
@@ -35,9 +35,12 @@ var _mode: int = 0
 var _collapse_pending: bool = false
 var _resolving: bool = false
 
+var _pending_block: JengaBlock = null
+var _pending_transform: Dictionary = {}
+
 func _ready() -> void:
 	var floors := randi_range(12, 15)
-	var theme := int(GameState.level / 3) % 2
+	var theme := GameState.selected_env
 
 	env_builder = EnvironmentBuilder.new()
 	add_child(env_builder)
@@ -46,6 +49,7 @@ func _ready() -> void:
 	tower = TowerBuilder.new()
 	add_child(tower)
 	tower.build(floors, theme)
+	GameState.configure_tower(tower.highest_floor() + 1)
 
 	monitor = TowerMonitor.new()
 	add_child(monitor)
@@ -159,6 +163,9 @@ func _try_grab(screen_pos: Vector2) -> bool:
 	var collider = hit.get("collider")
 	if not (collider is JengaBlock):
 		return false
+	if not tower.is_extractable(collider):
+		_reject_block(collider)
+		return false
 	_grabbed = collider
 	_grabbed.is_dragged = true
 	_grabbed.set_highlight(true)
@@ -171,6 +178,16 @@ func _try_grab(screen_pos: Vector2) -> bool:
 	_state = State.DRAGGING
 	AudioManager.play("click")
 	return true
+
+func _reject_block(block: JengaBlock) -> void:
+	block.set_neon(true, Color("#ff3d3d"))
+	AudioManager.play("wrong")
+	var tw := block.create_tween()
+	tw.tween_interval(0.35)
+	tw.tween_callback(func() -> void:
+		if is_instance_valid(block):
+			block.set_neon(false))
+	hud.flash_hint("No puedes tocar los dos pisos superiores. Saca bloques mas abajo.")
 
 func _update_drag_target(screen_pos: Vector2) -> void:
 	if not is_instance_valid(_grabbed):
@@ -202,8 +219,8 @@ func _release_grab() -> void:
 	_grabbed = null
 	_has_drag_target = false
 	var flat := Vector2(block.global_position.x, block.global_position.z)
-	if flat.length() > EXTRACT_RADIUS:
-		_extract_block(block)
+	if flat.length() > EXTRACT_RADIUS and tower.is_extractable(block):
+		_extract_and_lift(block)
 	else:
 		_state = State.TURN
 
@@ -225,24 +242,39 @@ func _pinch() -> void:
 		camera.zoom_by(d / _last_pinch)
 	_last_pinch = d
 
-func _extract_block(block: JengaBlock) -> void:
-	_state = State.TRIVIA
+# Saca el bloque y lo eleva hasta el tope. La trivia se dispara al terminar.
+func _extract_and_lift(block: JengaBlock) -> void:
+	var target := tower.next_top_transform()
+	if target.is_empty():
+		_state = State.TURN
+		return
+	_state = State.PLACING
 	tower.remove_block(block)
 	monitor.remove_block(block)
-	GameState.active().blocks += 1
-	monitor.check_stability()
-	block.mark_extracted()
+	GameState.active().extracted += 1
+	block.extracted = true
+	block.begin_place()
 	AudioManager.play("pop")
-	_spawn_confetti(block.global_position, 40)
+	_spawn_confetti(block.global_position, 30)
 	_update_stats()
-	_open_trivia()
-	_settle_then_check()
 
-func _settle_then_check() -> void:
-	await get_tree().create_timer(SETTLE_WAIT).timeout
+	_pending_transform = target
+	var pos: Vector3 = target["position"]
+	var tw := create_tween()
+	tw.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	tw.tween_property(block, "global_position", pos, PLACE_TIME)
+	tw.tween_callback(func() -> void: _on_block_on_top(block))
+
+func _on_block_on_top(block: JengaBlock) -> void:
+	if _state != State.PLACING:
+		return
+	_pending_block = block
+	block.global_position = _pending_transform["position"]
+	_state = State.TRIVIA
+	monitor.check_stability()
 	if _state == State.GAME_OVER:
 		return
-	monitor.check_stability()
+	_open_trivia()
 
 func _open_trivia() -> void:
 	var category := Trivia.CATEGORY_UNIDAD if randf() < 0.5 else Trivia.CATEGORY_CULTURA
@@ -261,20 +293,47 @@ func _on_trivia_answered(correct: bool, category: String) -> void:
 	_state = State.TURN
 	var p: GameState.PlayerData = GameState.active()
 	if correct:
+		_consolidate_pending()
 		if category == Trivia.CATEGORY_UNIDAD:
 			GameState.add_star(1)
 		else:
 			GameState.add_coin(1)
 		p.correct += 1
 		AudioManager.play("correct")
-		_spawn_confetti(camera.target + Vector3(0, 2, 0), 60)
+		_spawn_confetti(_pending_world_pos() + Vector3(0, 2, 0), 60)
 	else:
+		_fail_pending()
 		p.wrong += 1
 		AudioManager.play("wrong")
 		_shake_tower()
 		GameState.lose_life()
+	_pending_block = null
+	_pending_transform = {}
 	_update_stats()
 	_resolve_turn()
+
+# Acierto: el bloque se consolida, la torre crece y se asignan puntos por altura.
+func _consolidate_pending() -> void:
+	var block := _pending_block
+	if not is_instance_valid(block):
+		return
+	var t := _pending_transform
+	block.finalize_place(t["position"], t["rot_y"], t["floor_index"])
+	tower.add_block(block)
+	tower.floors = maxi(tower.floors, int(t["floor_index"]) + 1)
+	GameState.set_tower_height(tower.highest_floor() + 1)
+	GameState.register_stack(GameState.stack_points_for(tower.highest_floor() + 1))
+
+# Error: el bloque desaparece y deja un vacio en la torre.
+func _fail_pending() -> void:
+	var block := _pending_block
+	if is_instance_valid(block):
+		block.vanish()
+	monitor.check_stability()
+
+func _pending_world_pos() -> Vector3:
+	var t := _pending_transform
+	return t.get("position", camera.target)
 
 func _resolve_turn() -> void:
 	if _resolving:
@@ -293,7 +352,10 @@ func _resolve_turn() -> void:
 	if GameState.mode == GameState.Mode.VERSUS and GameState.alive_players().size() <= 1:
 		_end_game_eliminated()
 		return
-	if tower.remaining() <= 2:
+	if GameState.goal_reached():
+		_end_game_score()
+		return
+	if tower.remaining() <= 2 or not tower.has_eligible_block():
 		_end_game_score()
 		return
 	GameState.advance_turn()
@@ -307,7 +369,7 @@ func _on_tower_collapsed() -> void:
 	if _state == State.TRIVIA:
 		modal.close()
 		_end_game_collapse()
-	elif _state == State.TURN or _state == State.DRAGGING:
+	elif _state == State.TURN or _state == State.DRAGGING or _state == State.PLACING:
 		_end_game_collapse()
 
 func _end_game_collapse() -> void:
@@ -355,14 +417,17 @@ func _end_game_score() -> void:
 			winner_text = "%s se quedó con la torre." % winner.name
 		result.open(title, [
 			winner_text,
+			"Altura final: %d pisos · Apilados: %d" % [GameState.tower_height, GameState.stacked_blocks],
 			"%s → %d pts" % [a.name, sa],
 			"%s → %d pts" % [b.name, sb]
 		], [
 			{"text": "REVANCHA", "cb": _restart, "color": Color("#1de9b6")},
 			{"text": "MENÚ", "cb": _to_menu, "color": Color("#ff5252")}
 		])
+	elif GameState.goal_reached():
+		_finish_single("¡CIMA ALCANZADA!")
 	else:
-		_finish_single("¡TORRE DOMINADA!")
+		_finish_single("¡TORRE COMPLETADA!")
 
 func _finish_versus(loser: int, reason: String) -> void:
 	AudioManager.play("win")
@@ -378,14 +443,15 @@ func _finish_versus(loser: int, reason: String) -> void:
 	])
 
 func _finish_single(reason: String) -> void:
-	AudioManager.play("lose")
+	AudioManager.play("win" if GameState.goal_reached() else "lose")
 	var p: GameState.PlayerData = GameState.players[0]
 	var sc := GameState.score_of(p)
 	GameState.record_score(sc)
 	result.open(reason, [
 		"Puntaje: %d" % sc,
 		"Récord: %d" % GameState.best_score,
-		"Bloques extraídos: %d" % p.blocks,
+		"Altura alcanzada: %d pisos (meta %d)" % [GameState.tower_height, GameState.goal_height],
+		"Bloques apilados: %d" % p.blocks,
 		"Aciertos: %d    ★ %d    ● %d" % [p.correct, p.stars, p.coins]
 	], [
 		{"text": "REINTENTAR", "cb": _restart, "color": Color("#1de9b6")},

@@ -1,8 +1,9 @@
 class_name EnvironmentBuilder
 extends Node3D
 
-const ISLAND := 0
-const LAB := 1
+const TROPICAL := 0
+const DESERT := 1
+const MARINE := 2
 
 var _rng := RandomNumberGenerator.new()
 
@@ -12,10 +13,13 @@ func build(theme: int) -> void:
 	_rng.randomize()
 	_build_sky(theme)
 	_build_light(theme)
-	if theme == ISLAND:
-		_build_island()
-	else:
-		_build_lab()
+	match theme:
+		DESERT:
+			_build_desert()
+		MARINE:
+			_build_marine()
+		_:
+			_build_tropical()
 	_add_ground_body()
 
 func _add_ground_body() -> void:
@@ -37,16 +41,22 @@ func _add_ground_body() -> void:
 
 func _build_sky(theme: int) -> void:
 	var sky_mat := ProceduralSkyMaterial.new()
-	if theme == ISLAND:
-		sky_mat.sky_top_color = Color("#3fa9f5")
-		sky_mat.sky_horizon_color = Color("#cdeeff")
-		sky_mat.ground_bottom_color = Color("#2f7d32")
-		sky_mat.ground_horizon_color = Color("#cdeeff")
-	else:
-		sky_mat.sky_top_color = Color("#160033")
-		sky_mat.sky_horizon_color = Color("#5b1a8c")
-		sky_mat.ground_bottom_color = Color("#101020")
-		sky_mat.ground_horizon_color = Color("#3d1266")
+	match theme:
+		DESERT:
+			sky_mat.sky_top_color = Color("#ffb74d")
+			sky_mat.sky_horizon_color = Color("#ffe0a3")
+			sky_mat.ground_bottom_color = Color("#c98a3a")
+			sky_mat.ground_horizon_color = Color("#ffd79a")
+		MARINE:
+			sky_mat.sky_top_color = Color("#003b6f")
+			sky_mat.sky_horizon_color = Color("#1c8fc2")
+			sky_mat.ground_bottom_color = Color("#02223f")
+			sky_mat.ground_horizon_color = Color("#1c8fc2")
+		_:
+			sky_mat.sky_top_color = Color("#3fa9f5")
+			sky_mat.sky_horizon_color = Color("#cdeeff")
+			sky_mat.ground_bottom_color = Color("#2f7d32")
+			sky_mat.ground_horizon_color = Color("#cdeeff")
 
 	var sky := Sky.new()
 	sky.sky_material = sky_mat
@@ -57,7 +67,7 @@ func _build_sky(theme: int) -> void:
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
 	env.ambient_light_energy = 1.0
 	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
-	env.glow_enabled = theme == LAB
+	env.glow_enabled = theme == MARINE
 	env.glow_intensity = 0.7
 
 	var world_env := WorldEnvironment.new()
@@ -66,20 +76,33 @@ func _build_sky(theme: int) -> void:
 
 func _build_light(theme: int) -> void:
 	var sun := DirectionalLight3D.new()
-	sun.light_energy = 1.25 if theme == ISLAND else 0.7
-	sun.light_color = Color.WHITE if theme == ISLAND else Color("#c9a6ff")
 	sun.shadow_enabled = true
 	sun.rotation_degrees = Vector3(-58, 35, 0)
-	add_child(sun)
-
 	var fill := DirectionalLight3D.new()
 	fill.light_energy = 0.35
-	fill.light_color = Color("#a8d8ff") if theme == ISLAND else Color("#ff7ad9")
 	fill.shadow_enabled = false
 	fill.rotation_degrees = Vector3(-25, 200, 0)
+
+	match theme:
+		DESERT:
+			sun.light_energy = 1.5
+			sun.light_color = Color("#fff0c2")
+			fill.light_color = Color("#ffd28a")
+		MARINE:
+			sun.light_energy = 0.85
+			sun.light_color = Color("#7fd6ff")
+			fill.light_color = Color("#2fa8e0")
+		_:
+			sun.light_energy = 1.25
+			sun.light_color = Color.WHITE
+			fill.light_color = Color("#a8d8ff")
+
+	add_child(sun)
 	add_child(fill)
 
-func _build_island() -> void:
+# --- Selva Tropical (normal) -------------------------------------------
+
+func _build_tropical() -> void:
 	_add_cylinder(0.0, 0.6, 6.2, Color("#5ec24d"), Vector3(0, -0.3, 0), 40)
 	_add_cone(Color("#9c6b3f"), Vector3(0, -3.0, 0), 6.2, 1.2, 4.4)
 	_add_cylinder(0.0, 0.4, 5.4, Color("#6fd65a"), Vector3(0, -0.2, 0), 40)
@@ -91,40 +114,72 @@ func _build_island() -> void:
 
 	for i in 5:
 		var a := _rng.randf_range(0.0, TAU)
-		var r := _rng.randf_range(5.0, 7.5)
+		var r := _rng.randf_range(4.4, 5.7)
 		_add_palm(Vector3(cos(a) * r, 0.0, sin(a) * r))
 
-	for i in 4:
+	for i in 5:
 		var a := _rng.randf_range(0.0, TAU)
-		var r := _rng.randf_range(9.0, 16.0)
-		var p := Vector3(cos(a) * r, _rng.randf_range(-1.5, 2.5), sin(a) * r)
-		_add_cylinder(1.6, 2.0, 1.4, Color("#6fd65a"), p, 12)
-		_add_cone(Color("#8a5a34"), p + Vector3(0, -2.0, 0), 1.6, 0.3, 2.2)
+		var r := _rng.randf_range(4.2, 5.8)
+		_add_tree(Vector3(cos(a) * r, 0.0, sin(a) * r))
 
-func _build_lab() -> void:
-	_add_cylinder(0.0, 0.5, 6.2, Color("#37474f"), Vector3(0, -0.25, 0), 40)
-	_add_cylinder(0.0, 0.3, 5.6, Color("#546e7a"), Vector3(0, -0.15, 0), 40)
-	_add_cylinder(0.0, 0.3, 5.9, Color("#00e5ff"), Vector3(0, -0.18, 0), 40, true)
+# --- Desierto -----------------------------------------------------------
 
-	var tube_colors: Array = [Color("#00e5ff"), Color("#ff4081"), Color("#76ff03"), Color("#e040fb")]
+func _build_desert() -> void:
+	_add_cylinder(0.0, 0.6, 6.2, Color("#e0b45e"), Vector3(0, -0.3, 0), 40)
+	_add_cone(Color("#c98a3a"), Vector3(0, -3.0, 0), 6.2, 1.2, 4.4)
+	_add_cylinder(0.0, 0.4, 5.4, Color("#f2cf83"), Vector3(0, -0.2, 0), 40)
+
+	for i in 6:
+		var a := _rng.randf_range(0.0, TAU)
+		var r := _rng.randf_range(7.0, 13.0)
+		var dune := _add_cone(Color("#e8c06a"), Vector3(cos(a) * r, 1.2, sin(a) * r), 4.0, 3.4, 2.4)
+		dune.scale = Vector3(1.0, 0.5, 1.0)
+
+	for i in 5:
+		var a := _rng.randf_range(0.0, TAU)
+		var r := _rng.randf_range(4.2, 5.7)
+		_add_cactus(Vector3(cos(a) * r, 0.0, sin(a) * r))
+
+	for i in 6:
+		var a := _rng.randf_range(0.0, TAU)
+		var r := _rng.randf_range(3.8, 5.8)
+		var s := _rng.randf_range(0.25, 0.5)
+		_add_sphere(s, Color("#b98a52"), Vector3(cos(a) * r, s * 0.6, sin(a) * r))
+
+# --- Marina -------------------------------------------------------------
+
+func _build_marine() -> void:
+	_add_cylinder(0.0, 0.6, 6.2, Color("#e6d8a8"), Vector3(0, -0.3, 0), 40)
+	_add_cylinder(0.0, 0.4, 5.4, Color("#f0e4bc"), Vector3(0, -0.2, 0), 40)
+
+	var coral_colors: Array = [
+		Color("#ff6f91"), Color("#ff9671"), Color("#ffc75f"),
+		Color("#d65db1"), Color("#845ec2"), Color("#2c73d2")
+	]
+
+	for i in 9:
+		var a := _rng.randf_range(0.0, TAU)
+		var r := _rng.randf_range(4.0, 5.8)
+		_add_coral(Vector3(cos(a) * r, 0.0, sin(a) * r), coral_colors[i % coral_colors.size()])
+
 	for i in 10:
-		var a := TAU * float(i) / 10.0
-		var r := 5.4
-		var col: Color = tube_colors[i % tube_colors.size()]
-		var h := _rng.randf_range(4.0, 8.0)
-		_add_cylinder(0.18, 0.18, h, col, Vector3(cos(a) * r, h * 0.5, sin(a) * r), 12, true)
-		_add_sphere(0.4, col, Vector3(cos(a) * r, h + 0.3, sin(a) * r))
-
-	for i in 8:
 		var a := _rng.randf_range(0.0, TAU)
-		var r := _rng.randf_range(3.5, 8.0)
-		_add_bubble(Vector3(cos(a) * r, _rng.randf_range(3.0, 10.0), sin(a) * r))
+		var r := _rng.randf_range(3.6, 5.8)
+		_add_seagrass(Vector3(cos(a) * r, 0.0, sin(a) * r))
 
-	for i in 3:
-		_add_torus(2.4 + i * 1.6, 0.12, tube_colors[i % tube_colors.size()],
-			Vector3(0, 5.0 + i * 3.0, 0), Vector3(90 * i, 0, 30))
+	for i in 14:
+		var a := _rng.randf_range(0.0, TAU)
+		var r := _rng.randf_range(1.5, 8.0)
+		_add_bubble(Vector3(cos(a) * r, _rng.randf_range(1.0, 11.0), sin(a) * r))
 
-func _add_cylinder(top_r: float, bot_r: float, height: float, color: Color, pos: Vector3, segments: int = 24, emissive: bool = false) -> void:
+	for i in 7:
+		var a := _rng.randf_range(0.0, TAU)
+		var r := _rng.randf_range(4.0, 9.0)
+		_add_fish(Vector3(cos(a) * r, _rng.randf_range(2.0, 9.0), sin(a) * r), coral_colors[i % coral_colors.size()])
+
+# --- Primitivas ---------------------------------------------------------
+
+func _add_cylinder(top_r: float, bot_r: float, height: float, color: Color, pos: Vector3, segments: int = 24, emissive: bool = false) -> MeshInstance3D:
 	var mesh := CylinderMesh.new()
 	mesh.top_radius = top_r
 	mesh.bottom_radius = bot_r
@@ -135,8 +190,9 @@ func _add_cylinder(top_r: float, bot_r: float, height: float, color: Color, pos:
 	mi.mesh = mesh
 	mi.position = pos
 	add_child(mi)
+	return mi
 
-func _add_cone(color: Color, pos: Vector3, base_r: float, tip_r: float, height: float) -> void:
+func _add_cone(color: Color, pos: Vector3, base_r: float, tip_r: float, height: float) -> MeshInstance3D:
 	var mesh := CylinderMesh.new()
 	mesh.top_radius = tip_r
 	mesh.bottom_radius = base_r
@@ -147,8 +203,9 @@ func _add_cone(color: Color, pos: Vector3, base_r: float, tip_r: float, height: 
 	mi.mesh = mesh
 	mi.position = pos
 	add_child(mi)
+	return mi
 
-func _add_sphere(radius: float, color: Color, pos: Vector3, emissive: bool = false) -> void:
+func _add_sphere(radius: float, color: Color, pos: Vector3, emissive: bool = false) -> MeshInstance3D:
 	var mesh := SphereMesh.new()
 	mesh.radius = radius
 	mesh.height = radius * 2.0
@@ -159,6 +216,7 @@ func _add_sphere(radius: float, color: Color, pos: Vector3, emissive: bool = fal
 	mi.mesh = mesh
 	mi.position = pos
 	add_child(mi)
+	return mi
 
 func _add_bubble(pos: Vector3) -> void:
 	var mesh := SphereMesh.new()
@@ -177,19 +235,6 @@ func _add_bubble(pos: Vector3) -> void:
 	var mi := MeshInstance3D.new()
 	mi.mesh = mesh
 	mi.position = pos
-	add_child(mi)
-
-func _add_torus(radius: float, tube: float, color: Color, pos: Vector3, rot_deg: Vector3) -> void:
-	var mesh := TorusMesh.new()
-	mesh.inner_radius = radius - tube
-	mesh.outer_radius = radius + tube
-	mesh.rings = 24
-	mesh.ring_segments = 12
-	mesh.material = _flat(color, true)
-	var mi := MeshInstance3D.new()
-	mi.mesh = mesh
-	mi.position = pos
-	mi.rotation_degrees = rot_deg
 	add_child(mi)
 
 func _add_cloud(pos: Vector3) -> void:
@@ -216,6 +261,65 @@ func _add_palm(pos: Vector3) -> void:
 		mi.scale = Vector3(2.4, 0.5, 0.9)
 		mi.rotation_degrees = Vector3(0, -rad_to_deg(a), 20)
 		add_child(mi)
+
+# Arbol de copa redonda apoyado en el suelo.
+func _add_tree(pos: Vector3) -> void:
+	var h := _rng.randf_range(1.6, 2.4)
+	_add_cylinder(0.26, 0.36, h, Color("#8a5a34"), pos + Vector3(0, h * 0.5, 0), 10)
+	var r := _rng.randf_range(1.0, 1.4)
+	_add_sphere(r, Color("#3fae3f"), pos + Vector3(0, h + r * 0.6, 0))
+	_add_sphere(r * 0.6, Color("#4fc44f"), pos + Vector3(r * 0.5, h + r * 1.0, r * 0.2))
+	_add_sphere(r * 0.5, Color("#2f9e2f"), pos + Vector3(-r * 0.5, h + r * 0.8, -r * 0.2))
+
+func _add_cactus(pos: Vector3) -> void:
+	var h := _rng.randf_range(1.8, 3.0)
+	var green := Color("#3f9e4d")
+	_add_cylinder(0.32, 0.4, h, green, pos + Vector3(0, h * 0.5, 0), 12)
+	_add_cylinder(0.16, 0.16, 0.9, green, pos + Vector3(0.55, h * 0.55, 0), 10)
+	_add_cylinder(0.16, 0.16, 0.7, green, pos + Vector3(0.85, h * 0.7, 0), 10)
+	_add_cylinder(0.16, 0.16, 0.8, green, pos + Vector3(-0.5, h * 0.45, 0), 10)
+	_add_cylinder(0.16, 0.16, 0.6, green, pos + Vector3(-0.75, h * 0.6, 0), 10)
+
+func _add_coral(pos: Vector3, color: Color) -> void:
+	var branches := _rng.randi_range(3, 5)
+	for i in branches:
+		var h := _rng.randf_range(0.8, 1.8)
+		var off := Vector3(_rng.randf_range(-0.5, 0.5), 0.0, _rng.randf_range(-0.5, 0.5))
+		var mi := _add_cylinder(0.08, 0.16, h, color, pos + off + Vector3(0, h * 0.5, 0), 8)
+		mi.rotation_degrees = Vector3(_rng.randf_range(-14, 14), 0, _rng.randf_range(-14, 14))
+
+func _add_seagrass(pos: Vector3) -> void:
+	for i in 5:
+		var h := _rng.randf_range(0.8, 1.6)
+		var off := Vector3(_rng.randf_range(-0.4, 0.4), 0.0, _rng.randf_range(-0.4, 0.4))
+		var mi := _add_cylinder(0.03, 0.06, h, Color("#39a553"), pos + off + Vector3(0, h * 0.5, 0), 6)
+		mi.rotation_degrees = Vector3(_rng.randf_range(-18, 18), 0, _rng.randf_range(-18, 18))
+
+func _add_fish(pos: Vector3, color: Color) -> void:
+	var body := SphereMesh.new()
+	body.radius = 0.35
+	body.height = 0.7
+	body.radial_segments = 12
+	body.rings = 6
+	body.material = _flat(color, true)
+	var mi := MeshInstance3D.new()
+	mi.mesh = body
+	mi.position = pos
+	mi.scale = Vector3(1.8, 1.0, 0.7)
+	mi.rotation_degrees = Vector3(0, _rng.randf_range(0, 360), 0)
+	add_child(mi)
+
+	var tail := CylinderMesh.new()
+	tail.top_radius = 0.0
+	tail.bottom_radius = 0.28
+	tail.height = 0.4
+	tail.radial_segments = 8
+	tail.material = _flat(color, true)
+	var tm := MeshInstance3D.new()
+	tm.mesh = tail
+	tm.position = pos + Vector3(0, 0, 0.55)
+	tm.rotation_degrees = Vector3(90, 0, 0)
+	add_child(tm)
 
 func _flat(color: Color, emissive: bool) -> StandardMaterial3D:
 	var mat := StandardMaterial3D.new()
